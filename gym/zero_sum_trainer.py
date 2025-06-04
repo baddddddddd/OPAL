@@ -6,6 +6,7 @@ from torch import nn
 
 from environment import Game, Arena, Player
 
+
 class ModelPlayer(Player):
     def __init__(self, model: nn.Module, device, game: Game):
         super().__init__(game)
@@ -43,9 +44,12 @@ class ModelPlayer(Player):
 
 
 class ZeroSumTrainer:
-    def __init__(self, model: nn.Module, game: Game):
+    def __init__(self, model: nn.Module, game: Game, parallelized=False):
         self.device = torch.accelerator.current_accelerator().type if torch.accelerator.is_available() else "cpu"
         self.model = model.to(self.device)
+        self.parallelized = parallelized
+        if self.parallelized:
+            self.model.share_memory()
 
         self.game = game
         self.max_player = ModelPlayer(self.model, self.device, self.game)
@@ -57,7 +61,7 @@ class ZeroSumTrainer:
 
     def step(self, batch_size, max_random_moves=0):
         arena = Arena(self.max_player, self.min_player)
-        states, outcome = arena.tournament_with_replay(game_count=batch_size, max_random_moves=max_random_moves)
+        states, outcome = arena.tournament_with_replay(game_count=batch_size, max_random_moves=max_random_moves, parallelized=self.parallelized)
 
         self.model.train()
         states = torch.stack(states).to(self.device)

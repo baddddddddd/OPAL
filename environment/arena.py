@@ -1,7 +1,13 @@
 import random
+import os
+
+import torch
+import torch.multiprocessing as mp
 
 from environment import Game
 from environment.player import Player
+
+
 
 class Arena:
     def __init__(self, max_player: Player, min_player: Player):
@@ -37,17 +43,67 @@ class Arena:
         return states, outcome
 
 
-    def tournament_with_replay(self, game_count, max_random_moves=0):
-        replay_states = []
-        replay_outcome = []
+    def pit_with_replay_worker(self, task_queue: mp.Queue, result_queue: mp.Queue, max_random_moves=0):
+        while True:
+            task = task_queue.get()
+            if task is None:
+                break
 
-        for _ in range(game_count):
             states, outcome = self.pit_with_replay(max_random_moves=max_random_moves)
-            replay_states.extend(states)
-            replay_outcome.extend([outcome] * len(states))
+            safe_states = torch.stack([s.detach().cpu() for s in states])
+            result_queue.put((safe_states.numpy(), outcome))
 
-        return replay_states, replay_outcome
-        
+
+    def tournament_with_replay(self, game_count, max_random_moves=0, parallelized=False):
+        if parallelized:
+            # parallelization via multiprocessing, persistent workers
+            if not mp.get_start_method(allow_none=True):
+                mp.set_start_method("fork", force=True)
+
+            NUM_WORKERS = os.cpu_count()
+            task_queue = mp.Queue()
+            result_queue = mp.Queue()
+
+            workers = []
+            for _ in range(NUM_WORKERS):
+                p = mp.Process(target=self.pit_with_replay_worker, args=(task_queue, result_queue, max_random_moves))
+                p.start()
+                workers.append(p)
+
+            # queue up games
+            for _ in range(game_count):
+                task_queue.put(1)
+
+            # stop workers once games are processed
+            for _ in range(NUM_WORKERS):
+                task_queue.put(None)
+
+            # collect results
+            replay_states = []
+            replay_outcome = []
+
+            for _ in range(game_count):
+                safe_states, outcome = result_queue.get()
+                states = [torch.from_numpy(s) for s in safe_states]
+                replay_states.extend(states)
+                replay_outcome.extend([outcome] * len(states))
+
+            # join workers
+            for p in workers:
+                p.join()
+
+            return replay_states, replay_outcome
+        else:
+            replay_states = []
+            replay_outcome = []
+
+            for _ in range(game_count):
+                states, outcome = self.pit_with_replay(max_random_moves=max_random_moves)
+                replay_states.extend(states)
+                replay_outcome.extend([outcome] * len(states))
+
+            return replay_states, replay_outcome
+
 
     def pit(self, show_game=False, max_random_moves=0):
         self.game.reset_state()

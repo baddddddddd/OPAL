@@ -12,9 +12,11 @@ class Connect4o(nn.Module):
 
             nn.Linear(3 * 6 * 7, 64),
             nn.ReLU(),
+            nn.Dropout(0.2),
 
             nn.Linear(64, 64),
             nn.ReLU(),
+            nn.Dropout(0.2),
 
             nn.Linear(64, 1),
             nn.Tanh(),
