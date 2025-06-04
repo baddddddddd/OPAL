@@ -1,4 +1,5 @@
 from environment import Game
+import torch
 
 class TicTacToe(Game):
     def __init__(self):
@@ -6,6 +7,8 @@ class TicTacToe(Game):
         self.o_board = 0
         self.is_x_to_move = True
         self.history = []
+        self.NUM_COLS = 3
+        self.NUM_ROWS = 3
 
         self.lines = [
             0b000000111,
@@ -77,14 +80,14 @@ class TicTacToe(Game):
 
 
     def get_outcome(self):
-        if len(self.history) == 9:
-            return 0
-
         for line in self.lines:
             if (self.x_board & line) == line:
                 return 1 
             if (self.o_board & line) == line:
                 return -1
+
+        if len(self.history) == 9:
+            return 0
 
         return None
 
@@ -115,3 +118,26 @@ class TicTacToe(Game):
             rows.append(row)
 
         return '\n'.join(rows) + "\n"
+
+
+    def get_board_tensor(self, board):
+        rows = []
+        for i in range(self.NUM_ROWS):
+            row = []
+            for j in range(self.NUM_COLS):
+                index = (i * self.NUM_COLS) + j
+                bitmask = 1 << index
+
+                row.append(1 if (board & bitmask) else 0)
+
+            rows.append(torch.tensor(row, dtype=torch.float32))
+
+        return torch.stack(rows)
+
+
+    def get_state_tensor(self):
+        x_tensor = self.get_board_tensor(self.x_board)
+        o_tensor = self.get_board_tensor(self.o_board)
+        turn_tensor = torch.ones((self.NUM_ROWS, self.NUM_COLS), dtype=torch.float32) if self.is_maximizing() else torch.zeros((self.NUM_ROWS, self.NUM_COLS), dtype=torch.float32)
+        
+        return torch.stack([x_tensor, o_tensor, turn_tensor])

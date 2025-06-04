@@ -1,6 +1,8 @@
 import pickle
 import os
 
+import torch
+
 from environment import Game
 
 class Connect4(Game):
@@ -10,7 +12,7 @@ class Connect4(Game):
     NUM_TOTAL = NUM_COLS * NUM_ROWS
     NUM_CONNECT = 4
 
-    TABLES_FOLDER = "tables"
+    TABLES_FOLDER = "tables/connect_four"
     MOVES_PKL = f"{TABLES_FOLDER}/moves.pkl"
     LINES_PKL = f"{TABLES_FOLDER}/lines.pkl"
 
@@ -278,6 +280,29 @@ class Connect4(Game):
             rows.append(row)
 
         return '\n'.join(rows) + "\n"
+
+
+    def get_board_tensor(self, board):
+        rows = []
+        for i in range(self.NUM_ROWS):
+            row = []
+            for j in range(self.NUM_COLS):
+                index = (i * self.NUM_COLS) + j
+                bitmask = 1 << index
+
+                row.append(1 if (board & bitmask) else 0)
+
+            rows.append(torch.tensor(row, dtype=torch.float32))
+
+        return torch.stack(rows)
+
+
+    def get_state_tensor(self):
+        red_tensor = self.get_board_tensor(self.red_board)
+        yellow_tensor = self.get_board_tensor(self.yellow_board)
+        turn_tensor = torch.ones((self.NUM_ROWS, self.NUM_COLS), dtype=torch.float32) if self.is_maximizing() else torch.zeros((self.NUM_ROWS, self.NUM_COLS), dtype=torch.float32)
+        
+        return torch.stack([red_tensor, yellow_tensor, turn_tensor])
 
 
 Connect4.load_moves_table()
