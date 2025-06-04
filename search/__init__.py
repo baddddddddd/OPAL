@@ -1,0 +1,1 @@
+from search.minimax import Minimax
