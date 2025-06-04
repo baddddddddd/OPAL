@@ -84,7 +84,7 @@ class Arena:
 
             for _ in range(game_count):
                 safe_states, outcome = result_queue.get()
-                states = [torch.from_numpy(s) for s in safe_states]
+                states = torch.from_numpy(safe_states) 
                 replay_states.extend(states)
                 replay_outcome.extend([outcome] * len(states))
 
