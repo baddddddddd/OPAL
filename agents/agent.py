@@ -1,6 +1,6 @@
 from environment import Game
 
-class Player:
+class Agent:
     def __init__(self, game: Game):
         self.game = game
 
@@ -9,4 +9,3 @@ class Player:
 
     def play(self, **kwargs):
         pass
-

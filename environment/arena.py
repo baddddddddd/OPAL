@@ -5,11 +5,11 @@ import torch
 import torch.multiprocessing as mp
 
 from environment import Game
-from environment.player import Player
+from agents import Agent
 
 
 class Arena:
-    def __init__(self, max_player: Player, min_player: Player):
+    def __init__(self, max_player: Agent, min_player: Agent):
         self.max_player = max_player
         self.min_player = min_player
         self.game: Game = max_player.get_game()
@@ -154,10 +154,10 @@ class Arena:
             outcome = self.pit(show_game=show_game, max_random_moves=max_random_moves)
             if outcome == 1:
                 max_wins += 1
-                message = "Max Player Wins"
+                message = "Max Agent Wins"
             elif outcome == -1:
                 min_wins += 1
-                message = "Min Player Wins"
+                message = "Min Agent Wins"
             else:
                 draws += 1
                 message = "Draw"
