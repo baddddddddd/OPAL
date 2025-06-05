@@ -7,6 +7,9 @@ import torch.multiprocessing as mp
 from environment import Game
 from environment.player import Player
 
+####
+from functions.logistic_decay import logistic_decay
+
 
 
 class Arena:
@@ -56,43 +59,66 @@ class Arena:
 
     def tournament_with_replay(self, game_count, max_random_moves=0, parallelized=False):
         if parallelized:
-            # parallelization via multiprocessing, persistent workers
-            if not mp.get_start_method(allow_none=True):
-                mp.set_start_method("fork", force=True)
-
-            NUM_WORKERS = os.cpu_count()
-            task_queue = mp.Queue()
-            result_queue = mp.Queue()
-
             workers = []
-            for _ in range(NUM_WORKERS):
-                p = mp.Process(target=self.pit_with_replay_worker, args=(task_queue, result_queue, max_random_moves))
-                p.start()
-                workers.append(p)
+            try:
+                # parallelization via multiprocessing, persistent workers
+                if not mp.get_start_method(allow_none=True):
+                    mp.set_start_method("fork", force=True)
 
-            # queue up games
-            for _ in range(game_count):
-                task_queue.put(1)
+                NUM_WORKERS = os.cpu_count()
+                task_queue = mp.Queue()
+                result_queue = mp.Queue()
 
-            # stop workers once games are processed
-            for _ in range(NUM_WORKERS):
-                task_queue.put(None)
+                for _ in range(NUM_WORKERS):
+                    p = mp.Process(target=self.pit_with_replay_worker, args=(task_queue, result_queue, max_random_moves))
+                    p.start()
+                    workers.append(p)
 
-            # collect results
-            replay_states = []
-            replay_outcome = []
+                # queue up games
+                for _ in range(game_count):
+                    task_queue.put(1)
 
-            for _ in range(game_count):
-                safe_states, outcome = result_queue.get()
-                states = torch.from_numpy(safe_states) 
-                replay_states.extend(states)
-                replay_outcome.extend([outcome] * len(states))
+                # stop workers once games are processed
+                for _ in range(NUM_WORKERS):
+                    task_queue.put(None)
 
-            # join workers
-            for p in workers:
-                p.join()
+                # collect results
+                replay_states = []
+                replay_outcome = []
 
-            return replay_states, replay_outcome
+                for _ in range(game_count):
+                    safe_states, outcome = result_queue.get()
+                    states = torch.from_numpy(safe_states) 
+                    replay_states.extend(states)
+
+                    # a = 2
+                    # b = 4
+                    # labels = [outcome * logistic_decay(i, a, b) for i in reversed(range(n))]
+                    n = len(states)
+                    labels = [outcome] * n
+
+                    replay_outcome.extend(labels)
+
+                # join workers
+                for p in workers:
+                    p.join()    
+
+                return replay_states, replay_outcome
+
+            except KeyboardInterrupt:
+                print("KeyboardInterrupt caught. Terminating workers...")
+                for p in workers:
+                    if p.is_alive():
+                        p.terminate()
+                        p.join()
+                raise 
+
+            finally:
+                task_queue.close()
+                result_queue.close()
+                task_queue.join_thread()
+                result_queue.join_thread()
+
         else:
             replay_states = []
             replay_outcome = []

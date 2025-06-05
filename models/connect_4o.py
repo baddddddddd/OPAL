@@ -7,16 +7,25 @@ class Connect4o(nn.Module):
         super().__init__()
 
         self.net = nn.Sequential(
-            # (3 x 6 x 7)
-            nn.Flatten(start_dim=1),
-
-            nn.Linear(3 * 6 * 7, 64),
+            # (3, 6, 7)
+            nn.Conv2d(in_channels=3, out_channels=16, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.Dropout(0.2),
+
+            # (16, 6, 7)
+            nn.Conv2d(in_channels=16, out_channels=16, kernel_size=3, padding=1),
+            nn.ReLU(),
+
+            # (16, 6, 7)
+            nn.MaxPool2d(kernel_size=2, stride=2),
+
+            # (16, 3, 3)
+            nn.Flatten(),
+
+            nn.Linear(16 * 3 * 3, 64),
+            nn.ReLU(),
 
             nn.Linear(64, 64),
             nn.ReLU(),
-            nn.Dropout(0.2),
 
             nn.Linear(64, 1),
             nn.Tanh(),
