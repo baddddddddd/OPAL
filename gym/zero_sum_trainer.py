@@ -55,6 +55,7 @@ class ZeroSumTrainer:
         self.max_player = ModelPlayer(self.model, self.device, self.game)
         self.min_player = ModelPlayer(self.model, self.device, self.game)
 
+        # self.loss_fn = nn.HuberLoss()
         self.loss_fn = nn.MSELoss()
         self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=1e-3)
 
