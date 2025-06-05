@@ -1,1 +1,2 @@
 from search.minimax import Minimax
+from search.stochastic_minimax import StochasticMinimax
