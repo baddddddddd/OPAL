@@ -193,52 +193,57 @@ class Connect4(Game):
 
 
     def evaluate(self):
+        # return self.heuristic_evaluate()
+
         outcome = self.get_outcome()
         if outcome is None:
             return 0
 
         return outcome * (self.NUM_TOTAL - len(self.history) + 1)        
 
-        # score = 0
+    
+    def heuristic_evaluate(self):
+        '''Heuristic Evaluation provided by GPT-4o'''
 
-        # # Center control bonus
-        # center_col = [i * self.NUM_COLS + self.NUM_COLS // 2 for i in range(self.NUM_ROWS)]
-        # center_mask = sum(1 << idx for idx in center_col)
-        # red_center_count = bin(self.red_board & center_mask).count('1')
-        # yellow_center_count = bin(self.yellow_board & center_mask).count('1')
-        # score += 3 * (red_center_count - yellow_center_count)
+        score = 0
 
-        # # Heuristic scoring based on open lines
-        # for line in self.lines:
-        #     red = self.red_board & line
-        #     yellow = self.yellow_board & line
+        # Center control bonus
+        center_col = [i * self.NUM_COLS + self.NUM_COLS // 2 for i in range(self.NUM_ROWS)]
+        center_mask = sum(1 << idx for idx in center_col)
+        red_center_count = bin(self.red_board & center_mask).count('1')
+        yellow_center_count = bin(self.yellow_board & center_mask).count('1')
+        score += 3 * (red_center_count - yellow_center_count)
 
-        #     if red and yellow:
-        #         continue  # line is blocked
+        # Heuristic scoring based on open lines
+        for line in self.lines:
+            red = self.red_board & line
+            yellow = self.yellow_board & line
 
-        #     count = bin(red | yellow).count('1')
-        #     if count == 0:
-        #         continue  # empty line, not urgent
+            if red and yellow:
+                continue  # line is blocked
 
-        #     if red:
-        #         num = bin(red).count('1')
-        #         if num == 4:
-        #             return 1000000
-        #         elif num == 3:
-        #             score += 100
-        #         elif num == 2:
-        #             score += 10
-        #     elif yellow:
-        #         num = bin(yellow).count('1')
-        #         if num == 4:
-        #             return -1000000
-        #         elif num == 3:
-        #             score -= 100
-        #         elif num == 2:
-        #             score -= 10
+            count = bin(red | yellow).count('1')
+            if count == 0:
+                continue  # empty line, not urgent
 
-        # return score
+            if red:
+                num = bin(red).count('1')
+                if num == 4:
+                    return 1000000
+                elif num == 3:
+                    score += 100
+                elif num == 2:
+                    score += 10
+            elif yellow:
+                num = bin(yellow).count('1')
+                if num == 4:
+                    return -1000000
+                elif num == 3:
+                    score -= 100
+                elif num == 2:
+                    score -= 10
 
+        return score
 
 
     def get_outcome(self):
