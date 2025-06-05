@@ -79,27 +79,18 @@ class Arena:
                     task_queue.put(None)
 
                 # collect results
-                replay_states = []
-                replay_outcome = []
+                replay_results = []
 
                 for _ in range(game_count):
                     safe_states, outcome = result_queue.get()
                     states = torch.from_numpy(safe_states) 
-                    replay_states.extend(states)
-
-                    # a = 2
-                    # b = 4
-                    # labels = [outcome * logistic_decay(i, a, b) for i in reversed(range(n))]
-                    n = len(states)
-                    labels = [outcome] * n
-
-                    replay_outcome.extend(labels)
+                    replay_results.append((states, outcome))
 
                 # join workers
                 for p in workers:
                     p.join()    
 
-                return replay_states, replay_outcome
+                return replay_results
 
             except KeyboardInterrupt:
                 print("KeyboardInterrupt caught. Terminating workers...")
