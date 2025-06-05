@@ -62,17 +62,23 @@ class ZeroSumTrainer:
 
     def step(self, batch_size, max_random_moves=0):
         arena = Arena(self.max_player, self.min_player)
-        states, outcome = arena.tournament_with_replay(game_count=batch_size, max_random_moves=max_random_moves, parallelized=self.parallelized)
+        replays = arena.tournament_with_replay(game_count=batch_size, max_random_moves=max_random_moves, parallelized=self.parallelized)
+
+        data = []
+        label = []
+        for (replay_states, replay_outcome) in replays:
+            data.extend(replay_states)
+            label.extend([replay_outcome] * len(replay_states))
 
         self.model.train()
-        states = torch.stack(states).to(self.device)
-        outcome = torch.tensor(outcome, dtype=torch.float32, device=self.device).unsqueeze(1)
+        states = torch.stack(data).to(self.device)
+        outcome = torch.tensor(label, dtype=torch.float32, device=self.device).unsqueeze(1)
         prediction = self.model(states)
 
         loss = self.loss_fn(prediction, outcome)
+        self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
-        self.optimizer.zero_grad()
 
         return loss
 

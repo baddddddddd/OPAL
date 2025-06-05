@@ -7,10 +7,6 @@ import torch.multiprocessing as mp
 from environment import Game
 from environment.player import Player
 
-####
-from functions.logistic_decay import logistic_decay
-
-
 
 class Arena:
     def __init__(self, max_player: Player, min_player: Player):
@@ -120,15 +116,13 @@ class Arena:
                 result_queue.join_thread()
 
         else:
-            replay_states = []
-            replay_outcome = []
+            replay_results = []
 
             for _ in range(game_count):
                 states, outcome = self.pit_with_replay(max_random_moves=max_random_moves)
-                replay_states.extend(states)
-                replay_outcome.extend([outcome] * len(states))
+                replay_results.append((states, outcome))
 
-            return replay_states, replay_outcome
+            return replay_results
 
 
     def pit(self, show_game=False, max_random_moves=0):
