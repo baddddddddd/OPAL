@@ -8,11 +8,11 @@ class TicTacAI(nn.Module):
         self.net = nn.Sequential(
             
             # (3 x 3 x 3)
-            nn.Conv2d(in_channels=3, out_channels=8, kernel_size=3, padding=1),
+            nn.Conv2d(in_channels=3, out_channels=16, kernel_size=3, padding=1),
             nn.ReLU(),
 
             # (3 x 3 x 3)
-            nn.Conv2d(in_channels=8, out_channels=16, kernel_size=3, padding=1),
+            nn.Conv2d(in_channels=16, out_channels=16, kernel_size=3, padding=1),
             nn.ReLU(),
 
             #### works best
