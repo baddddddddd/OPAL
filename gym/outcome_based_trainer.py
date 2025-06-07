@@ -22,7 +22,7 @@ class OutcomeBasedTrainer:
 
         # self.loss_fn = nn.HuberLoss()
         self.loss_fn = nn.CrossEntropyLoss()
-        self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=1e-3)
+        self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=1e-3, weight_decay=1e-4)
 
 
     def step(self, batch_size, max_random_moves=0):
