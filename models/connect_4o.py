@@ -2,7 +2,7 @@ import torch
 from torch import nn
 
 
-class Connect4o(nn.Module):
+class Connect4oV1(nn.Module):
     def __init__(self):
         super().__init__()
 
@@ -32,4 +32,13 @@ class Connect4o(nn.Module):
 
     def forward(self, x):
         return self.net(x)
+
+
+from models.opal_net import OPALNetv1
+class Connect4oV2(OPALNetv1):
+    def __init__(self):
+        super().__init__(input_shape=(3, 6, 7), filters=32, blocks=3, fc_length=32, output_length=3)
+
+
+
 
