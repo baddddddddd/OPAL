@@ -1,0 +1,2 @@
+from gym.zero_sum_trainer import ZeroSumTrainer
+from gym.outcome_based_trainer import OutcomeBasedTrainer
