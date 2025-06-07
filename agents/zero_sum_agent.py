@@ -12,7 +12,7 @@ class ZeroSumAgent(Agent):
         self.device = device
 
 
-    def find_move(self):
+    def find_move(self, temperature=0.0):
         self.model.eval()
 
         with torch.no_grad():
@@ -27,13 +27,16 @@ class ZeroSumAgent(Agent):
             beliefs = self.model(lookahead)
 
             if not self.game.is_maximizing():
-                beliefs *= -1
+                beliefs = -beliefs
 
-            # probabilities = torch.softmax(beliefs, dim=0).flatten()
-            # move_index = torch.multinomial(probabilities, num_samples=1).item()
-
-            move_index = torch.argmax(beliefs).item()
+            if temperature > 0.0:
+                probabilities = torch.softmax(beliefs / 0.5, dim=0).flatten()
+                move_index = torch.multinomial(probabilities, num_samples=1).item()
+            else:
+                move_index = torch.argmax(beliefs).item()
+            
             return moves[move_index]
+
 
     def play(self):
         move = self.find_move()
